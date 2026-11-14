@@ -14,7 +14,6 @@ function readState() {
 
 function App() {
   const [state, setState] = useState(readState)
-  const [view, setView] = useState(state.role || 'login')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
@@ -25,21 +24,19 @@ function App() {
   const reset = () => {
     const fresh = { ...courseData, role: null, language: state.language, activeExam: null }
     setState(fresh)
-    setView('login')
   }
   const signIn = (role) => {
     update({ role })
-    setView(role)
   }
 
-  if (!state.role || view === 'login') {
+  if (!state.role) {
     return <Login language={state.language} t={t} onLanguage={(language) => update({ language })} onSignIn={signIn} />
   }
 
   return (
     <div className="app-shell">
-      <TopHeader state={state} t={t} view={view} onLanguage={(language) => update({ language })} onView={setView} onLogout={() => { update({ role: null }); setView('login') }} />
-      {view === 'student' ? (
+      <TopHeader state={state} t={t} onLanguage={(language) => update({ language })} onLogout={() => update({ role: null })} />
+      {state.role === 'student' ? (
         <StudentPortal state={state} t={t} onUpdate={update} />
       ) : (
         <FacultyPortal state={state} t={t} onUpdate={update} />
@@ -96,7 +93,7 @@ function LoginCard({ type, t, onSignIn }) {
   )
 }
 
-function TopHeader({ state, t, view, onLanguage, onView, onLogout }) {
+function TopHeader({ state, t, onLanguage, onLogout }) {
   return (
     <header className="top-header">
       <div className="header-brand">
@@ -106,10 +103,7 @@ function TopHeader({ state, t, view, onLanguage, onView, onLogout }) {
       <div className="course-banner"><span className="mono">054192</span><span>{t.courseName}</span></div>
       <div className="header-actions">
         <LanguageToggle language={state.language} onLanguage={onLanguage} />
-        <div className="role-switch">
-          <button className={view === 'student' ? 'active' : ''} onClick={() => onView('student')}>{t.studentView}</button>
-          <button className={view === 'faculty' ? 'active' : ''} onClick={() => onView('faculty')}>{t.facultyView}</button>
-        </div>
+        <span className="session-role">{state.role === 'faculty' ? t.facultyPortal : t.studentPortal}</span>
         <button className="logout-button" onClick={onLogout}>{t.logout}</button>
       </div>
     </header>
@@ -332,7 +326,7 @@ function OfficialExam({ t, camera, setCamera, onSubmit }) {
     setRecording(false)
   }
   const cameraAvailable = Boolean(navigator.mediaDevices?.getUserMedia)
-  return <section className="exam-room"><div className="exam-video panel"><div className="video-stage">{camera && streamReady && !cameraError && cameraAvailable ? <video ref={videoRef} autoPlay muted playsInline className="camera-feed" /> : <div className="camera-fallback"><div className="camera-frame">CAM</div><strong>{cameraError ? t.cameraDenied : t.cameraUnavailable}</strong><span>{cameraError ? t.cameraDeniedNote : t.cameraNote}</span></div>}</div><div className="device-status"><span className={streamReady ? 'live-indicator' : 'offline-indicator'} />{streamReady ? t.devicesReady : t.devicesRequired}</div><div className="video-controls"><button className="secondary-button" onClick={() => { if (!camera) setCameraError(false); setCamera(!camera) }}>{camera ? t.disableCamera : t.enableCamera}</button><button className={`record-button ${recording ? 'is-recording' : ''}`} disabled={!streamReady || !window.MediaRecorder} onClick={recording ? stopRecording : startRecording}>{recording ? t.stopRecording : t.startRecording}</button><span className="recording-time"><i className={recording ? 'pulse' : ''} />{formatTime(recordingSeconds)} / 05:00</span><button className={`ghost-button ${micListening ? 'active-control' : ''}`} onClick={toggleMic}>{micListening ? t.stopMic : t.mic}</button></div>{recordingUrl && <div className="recording-review"><span>{t.recordingReady}</span><a className="secondary-button" href={recordingUrl} download="polimi-oral-exam.webm">{t.downloadRecording}</a></div>}<div className="assigned-exam"><span className="eyebrow">{t.assignedPrompt}</span><strong>Explain the OSNR cascade formula and the main physical limits of EDFA amplifiers.</strong></div></div><div className="exam-notes panel"><PanelHeading eyebrow={t.officialExam} title={t.transcriptTitle} action={<button className="secondary-button" onClick={fill}>{t.loadTranscript}</button>} /><textarea value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder={t.transcriptPlaceholder} /><label className="field-label">{t.formulaScratchpad}</label><div className="scratchpad">OSNR<sub>out</sub><sup>-1</sup> = OSNR<sub>in</sub><sup>-1</sup> + NF · (G - 1) / G</div><button className="primary-button full" disabled={!transcript} onClick={() => onSubmit(transcript)}>{t.submitOfficial}</button></div></section>
+  return <section className="exam-room"><div className="exam-video panel"><div className="video-stage">{camera && streamReady && !cameraError && cameraAvailable ? <video ref={videoRef} autoPlay muted playsInline className="camera-feed" /> : <div className="camera-fallback"><div className="camera-frame">CAM</div><strong>{cameraError ? t.cameraDenied : t.cameraUnavailable}</strong><span>{cameraError ? t.cameraDeniedNote : t.cameraNote}</span></div>}</div><div className="device-status"><span className={streamReady ? 'live-indicator' : 'offline-indicator'} />{streamReady ? t.devicesReady : t.devicesRequired}</div><div className="video-controls"><button className="secondary-button" onClick={() => { if (camera) setStreamReady(false); else setCameraError(false); setCamera(!camera) }}>{camera ? t.disableCamera : t.enableCamera}</button><button className={`record-button ${recording ? 'is-recording' : ''}`} disabled={!streamReady || !window.MediaRecorder} onClick={recording ? stopRecording : startRecording}>{recording ? t.stopRecording : t.startRecording}</button><span className="recording-time"><i className={recording ? 'pulse' : ''} />{formatTime(recordingSeconds)} / 05:00</span><button className={`ghost-button ${micListening ? 'active-control' : ''}`} onClick={toggleMic}>{micListening ? t.stopMic : t.mic}</button></div>{recordingUrl && <div className="recording-review"><span>{t.recordingReady}</span><a className="secondary-button" href={recordingUrl} download="polimi-oral-exam.webm">{t.downloadRecording}</a></div>}<div className="assigned-exam"><span className="eyebrow">{t.assignedPrompt}</span><strong>Explain the OSNR cascade formula and the main physical limits of EDFA amplifiers.</strong></div></div><div className="exam-notes panel"><PanelHeading eyebrow={t.officialExam} title={t.transcriptTitle} action={<button className="secondary-button" onClick={fill}>{t.loadTranscript}</button>} /><textarea value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder={t.transcriptPlaceholder} /><label className="field-label">{t.formulaScratchpad}</label><div className="scratchpad">OSNR<sub>out</sub><sup>-1</sup> = OSNR<sub>in</sub><sup>-1</sup> + NF · (G - 1) / G</div><button className="primary-button full" disabled={!transcript} onClick={() => onSubmit(transcript)}>{t.submitOfficial}</button></div></section>
 }
 
 function formatTime(seconds) {
@@ -343,8 +337,17 @@ function FacultyPortal({ state, t, onUpdate }) {
   const [selected, setSelected] = useState(state.submissions[0] || state.queue[0])
   const [grade, setGrade] = useState('28')
   const [notes, setNotes] = useState('')
-  const candidate = selected || state.queue[0]
-  const register = () => onUpdate({ graded: { id: candidate.id, grade: grade === 'lode' ? '30 e Lode' : `${grade}/30`, notes }, queue: state.queue.map((item) => item.id === candidate.id ? { ...item, status: 'graded', score: Number(grade) || 30 } : item), submissions: state.submissions.map((item) => item.id === candidate.id ? { ...item, status: 'graded', score: Number(grade) || 30 } : item) })
+  const allCandidates = [...state.submissions, ...state.queue]
+  const candidate = allCandidates.find((item) => item.id === selected?.id) || allCandidates[0]
+  const register = () => {
+    if (!candidate) return
+    const officialGrade = grade === 'lode' ? '30 e Lode' : `${grade}/30`
+    onUpdate({
+      graded: candidate.matricola === '234910' ? { id: candidate.id, grade: officialGrade, notes } : state.graded,
+      queue: state.queue.map((item) => item.id === candidate.id ? { ...item, status: 'graded', score: Number(grade) || 30, grade: officialGrade, notes } : item),
+      submissions: state.submissions.map((item) => item.id === candidate.id ? { ...item, status: 'graded', score: Number(grade) || 30, grade: officialGrade, notes } : item)
+    })
+  }
   return <main className="portal faculty-portal"><div className="portal-heading"><div><span className="eyebrow">{t.facultyArea}</span><h1>{t.facultyWelcome}</h1><p>{t.facultyIntro}</p></div><div className="session-chip"><span className="status-dot" />{t.examSession}<strong>{t.winterCall}</strong></div></div><div className="faculty-grid"><section className="panel queue-panel"><PanelHeading eyebrow={t.examQueue} title={t.candidates} /><div className="queue-list">{[...state.submissions, ...state.queue].map((item) => <button className={`queue-item ${candidate.id === item.id ? 'selected' : ''}`} key={item.id} onClick={() => setSelected(item)}><div className="avatar">{item.candidate.split(' ').map((part) => part[0]).join('')}</div><div><strong>{item.candidate}</strong><span className="mono">{item.matricola}</span></div><div className="queue-score"><b>{item.score}/30</b><span className={item.status === 'graded' ? 'success-text' : 'warning-text'}>{item.status === 'graded' ? t.registered : t.waiting}</span></div></button>)}</div></section><section className="panel review-panel"><PanelHeading eyebrow={t.examRecording} title={candidate.candidate} action={<span className="mono">{candidate.matricola}</span>} /><div className="simulated-video"><div className="camera-frame">EXAM</div><div className="waveform">{[18, 30, 44, 26, 52, 35, 62, 30, 48, 24, 42, 34, 55, 22, 38, 28, 48, 32, 58].map((height, index) => <i style={{ height }} key={index} />)}</div><span>03:10 / 05:00</span></div><div className="markers"><span className="eyebrow">{t.timelineMarkers}</span>{(candidate.markers || state.queue[0].markers).map((marker) => <button className={`marker ${marker.tone}`} key={marker.time}><span className="mono">[{marker.time}]</span>{marker.label}</button>)}</div><div className="transcript-preview"><span className="eyebrow">{t.transcriptTitle}</span><p>{candidate.transcript || t.simulatedTranscript}</p></div></section><section className="panel copilot-panel"><PanelHeading eyebrow={t.committee} title={t.followUpQuestions} /><div className="follow-up-list"><FollowUp title={t.threshold} text="What is the role of the noise figure in the OSNR cascade?" /><FollowUp title={t.analytical} text="Derive the inverse OSNR relationship for two cascaded amplifiers." /><FollowUp title={t.honors} text="Discuss the trade-off between gain flattening and nonlinear penalties in WDM." /></div><div className="grade-form"><span className="eyebrow">{t.verbale}</span><h3>{t.registerGrade}</h3><select value={grade} onChange={(event) => setGrade(event.target.value)}>{Array.from({ length: 13 }, (_, index) => 18 + index).map((value) => <option value={value} key={value}>{value}/30</option>)}<option value="lode">30 e Lode</option></select><textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder={t.notesPlaceholder} /><button className="primary-button full" onClick={register}>{t.signGrade}</button></div></section></div></main>
 }
 

@@ -23,6 +23,7 @@
 .course-banner { border-left: 1px solid var(--line); padding-left: 24px; display: flex; gap: 12px; font-size: 13px; color: var(--steel); flex: 1; }
 .course-banner .mono { color: var(--navy); font-weight: 700; }
 .header-actions { display: flex; align-items: center; gap: 15px; }
+.session-role { color: var(--steel); font-size: 10px; font-weight: 750; letter-spacing: .08em; }
 .language-toggle, .role-switch { display: inline-flex; border: 1px solid var(--line); background: #fff; }
 .language-toggle button, .role-switch button { border: 0; padding: 7px 10px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; }
 .language-toggle button.active, .role-switch button.active { background: var(--navy); color: white; }
